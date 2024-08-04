@@ -1,0 +1,89 @@
+Embedded SQL(在Microsoft Visual Studio 2019下调试成功):
+Embedded Static SQL:
+1.用C:\Program Files\IBM\SQLLIB\include\下的文件sql.h拷贝到C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\VS\include\；
+2.将C:\Program Files\IBM\SQLLIB\include\下的文件sqlsystm.h，sqlca.h，sqladef.h，sqlenv.h和sqlda.h也都拷贝到C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\VS\include\；
+3.StaticSQL.sqc头文件用：
+#include <stdio.h>
+#include <string.h>
+#include <sqlca.h>
+#include <sql.h>
+可选项(也在C:\Program Files\IBM\SQLLIB\include\中)为：
+#include <sqlenv.h>
+#include <sqlda.h>
+4.打开DB2命令窗口，进入到源代码文件StaticSQL.sqc所在目录，分别运行如下命令预编译DB2嵌入(C语言)式程序：
+db2 connect to sample user administrator using sc;
+注：这里的用户名和密码只是示意，用你实际的用户名和密码连接sample数据库
+db2 prep StaticSQL.sqc
+运行成功后将在当前目录生成更改过的源代码文件StaticSQL.c，以及在数据库中生成StaticSQL包。
+5.创建C工程项目StaticSQLSample，项目类型选：Win32控制台应用程序。
+6.将StaticSQL.c拷贝到C工程项目的当前目录，在C工程项目中添加StaticSQL.c。
+7.将C:\Program Files\IBM\SQLLIB\lib\db2api.lib拷贝到C工程项目的当前目录，作为联结库，例如路径为：
+C:\Users\Administrator\source\repos\StaticSQLSample\StaticSQLSample
+8.把工具栏上x86改选成x64。
+9.选中C工程项目，点击菜单上的项目-〉属性，点击：配置属性-〉链接器-〉输入，在附加依赖项中的第一项填入：db2api.lib。
+10.选中C工程项目，点击菜单上的项目-〉属性，点击：配置属性-〉C/C++-〉预处理器，在预处理器定义中选：编辑，在最后一项中加入：_CRT_SECURE_NO_WARNINGS。
+11.选中C工程项目，点击菜单上的项目-〉属性，点击：配置属性-〉C/C++-〉预编译头，在预编译头项选择：不使用预编译头。
+12.编译，链接并运行StaticSQL.c程序。
+13.在控制台看运行结果。
+
+Embedded Dynamic SQL的配置和运行方式与Embedded Static SQL类似。
+
+CLI(在Microsoft Visual Studio 2019下调试成功):
+1.下载并配置DB2 ODBC数据源
+1.1 下载DB2 ODBC Driver(解压后的目录v9.5fp10_nt32_odbc_cli(for Win32)或v9.5fp9_ntx64_odbc_cli(for Win64)已放到：
+\\10.60.41.1\Publicfiles\CourseDocuments_课程文档\大型数据库应用开发_唐剑锋\实验文档\数据库(DB2)应用开发 中)，将该目录拷贝到本地，比如D:\。
+1.2 打开DB2命令窗口，
+       cd D:\v9.5fp10_nt32_odbc_cli\clidriver\bin
+    或:cd D:\v9.5fp9_ntx64_odbc_cli\clidriver\bin
+运行：db2oreg1.exe -i
+以上命令实现注册ODBC驱动程序的功能
+1.3 打开控制面板-〉系统和安全-〉管理工具-〉ODBC 数据源(64 位)-〉用户DSN。
+点击按钮：添加，选择刚刚注册好的ODBC驱动程序。
+填写数据源名称，如：samp1，数据源名称必须与CLI.c中的代码：SQLConnect(ConHandle, (SQLCHAR *) "samp1", 中的samp1相匹配。
+点击：Add，UserID填写连接数据库的用户名，Password填写连接数据库的密码。选中Save password多选框。
+在：Advanced Settings 栏目，点击：Add，选择如下四项(在Pending Value项中填写)：
+Database填：程序连接的数据库名字，如：sample
+Hostname填(本地)：127.0.0.1
+Port填(缺省)：50000
+Protocol选择：TCPIP
+点击“确定”保存。
+1.4 再次点击：数据源(ODBC) 进入，在用户DSN，选择刚刚建立好的用户数据源，点击：配置，点击按钮Connect，可测试是否连接数据源成功。正常是连接成功的状态。
+2.将C:\Program Files\IBM\SQLLIB\include\sqlcli1.h和sqlcli.h拷贝到C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\VS\include\
+3.创建C工程项目CLISample，项目类型选：Win32控制台应用程序。
+4.将CLI.c拷贝到C工程项目的当前目录，在C工程项目中添加CLI.c。
+5.将C:\Program Files\IBM\SQLLIB\lib\db2api.lib拷贝到C工程项目的当前目录，作为联结库，例如路径为：
+C:\Users\Administrator\source\repos\CLISample\CLISample
+6.CLI.c头文件用：
+#include <stdio.h>
+#include <string.h>
+#include <sqlcli1.h>
+7.把工具栏上x86改选成x64。
+8.选中C工程项目，点击菜单上的项目-〉属性，点击：配置属性-〉高级，在字符集项选择：未设置。
+9.选中C工程项目，点击菜单上的项目-〉属性，点击：配置属性-〉链接器-〉输入，在附加依赖项中的第一项填入：db2api.lib。
+10.选中C工程项目，点击菜单上的项目-〉属性，点击：配置属性-〉C/C++-〉预处理器，在预处理器定义中选编辑，在最后一项中加入：_CRT_SECURE_NO_WARNINGS。
+11.选中C工程项目，点击菜单上的项目-〉属性，点击：配置属性-〉C/C++-〉预编译头，在预编译头项选择：不使用预编译头。
+12.编译，链接并运行CLI.c程序。
+13.在控制台看运行结果。
+
+JDBC:
+1.将CLASSPATH设置为(环境变量中的系统变量)：
+C:\Program Files\IBM\SQLLIB\java\db2java.zip;C:\Program Files\IBM\SQLLIB\java\db2jcc.jar;(分别为Type 2和Type 4的classpath)
+
+2.将上述路径调整到诸多PATH参数的前面，.(代表当前目录)的后面。
+
+3.将PATH设置为(环境变量中的系统变量)：
+C:\Program Files\IBM\SQLLIB\java\jdk\bin;
+
+4.将上述路径调整到诸多PATH参数的最前面。
+
+5.打开cmd窗口，cd到ConnDb.java文件的相应路径中，然后运行：javac ConnDb.java 编译源代码文件，运行：java ConnDb 运行类文件。
+
+6.cd到StmtDb.java文件的相应路径中，然后运行：javac StmtDb.java 编译源代码文件，运行：java StmtDb 运行类文件。
+
+SQLJ:
+1.将CLASSPATH设置为(环境变量中的系统变量)：
+C:\Program Files\IBM\SQLLIB\java\sqlj.zip;
+
+2.将上述路径调整到诸多PATH参数的前面，.(代表当前目录)的后面。
+
+3.打开cmd窗口，cd到Iter.sqlj文件的相应路径中，然后运行：sqlj Iter.sqlj，运行：java Iter 运行类文件。

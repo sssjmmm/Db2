@@ -1,0 +1,230 @@
+#include <windows.h>
+#include <stdio.h>
+#include <string.h>
+#include <sqlca.h>
+#include <sql.h>
+#include <sqlenv.h>
+#include <sqlda.h>
+
+void printMenu() {
+    printf("1. 查询\n");
+    printf("2. 增加\n");
+    printf("3. 修改\n");
+    printf("4. 删除\n");
+    printf("5. EXIT\n");
+    printf("请输入操作序号：");
+}
+
+void executeQuery() {
+    // Include the SQLCA data structure variable
+    EXEC SQL INCLUDE SQLCA;
+    // Define the SQL host variables needed
+    EXEC SQL BEGIN DECLARE SECTION;
+        char     EmployeeNo[7];
+        char     LastName[16];
+        double   Salary;
+        short    SalaryNI;
+        char     JobType[10];
+    EXEC SQL END DECLARE SECTION;
+
+    // Connect to the appropriate database
+    EXEC SQL CONNECT TO SAMPLE USER administrator USING sc;
+
+    // Prompt for job type
+    printf("请输入职位类型：");
+    scanf("%s", JobType);
+
+    // Define a dynamic SELECT SQL statement
+    char SQLStmt[80] = "SELECT EMPNO, LASTNAME, DOUBLE(SALARY) FROM EMPLOYEE2 WHERE JOB = ? ";
+
+    // Prepare the SQL statement
+    EXEC SQL PREPARE SQL_STMT FROM :SQLStmt;
+   
+    EXEC SQL DECLARE C1 CURSOR FOR SQL_STMT;
+   
+    EXEC SQL OPEN C1 USING :JobType;
+
+    // If the cursor was opened successfully, retrieve and display all records available
+    while (1) {
+        // Retrieve the current record from the cursor
+        EXEC SQL FETCH C1 INTO :EmployeeNo, :LastName, :Salary :SalaryNI;
+
+        // Display the record retrieved
+        if (sqlca.sqlcode == SQL_RC_OK) {
+            printf("%-8s %-16s ", EmployeeNo, LastName);
+            if (SalaryNI == 0)
+                printf("%lf\n", Salary);
+            else
+                printf("Unknown\n");
+        }
+        else {
+            break;
+        }
+    }
+
+    // Close the cursor
+    EXEC SQL CLOSE C1;
+
+    // Commit the transaction
+    EXEC SQL COMMIT;
+
+    // Terminate the database connection
+    EXEC SQL DISCONNECT CURRENT;
+}
+
+void executeInsert() {
+    // Include the SQLCA data structure variable
+    EXEC SQL INCLUDE SQLCA;
+    // Define the SQL host variables needed
+    EXEC SQL BEGIN DECLARE SECTION;
+        char     EmployeeNo[7];
+        char     LastName[16];
+        double Salary;
+        char     JobType[10]; 
+    EXEC SQL END DECLARE SECTION;
+
+    // Connect to the appropriate database
+    EXEC SQL CONNECT TO SAMPLE USER administrator USING sc;
+
+    // Prompt for employee details
+    printf("请输入员工编号：");
+    scanf("%s", EmployeeNo);
+    printf("请输入员工姓氏：");
+    scanf("%s", LastName);
+    printf("请输入职位类型：");
+    scanf("%s", JobType);
+    printf("请输入员工薪水：");
+    scanf("%lf", &Salary);
+
+    // Define a dynamic INSERT SQL statement
+    char SQLStmt[80] = "INSERT INTO EMPLOYEE2 (EMPNO, LASTNAME, JOB, SALARY) VALUES (?, ?, ?, ?)";
+
+    // Prepare the SQL statement
+    EXEC SQL PREPARE SQL_STMT FROM :SQLStmt;
+
+    // Execute the SQL statement
+    EXEC SQL EXECUTE SQL_STMT USING :EmployeeNo, :LastName, :JobType, :Salary;
+
+    if (sqlca.sqlcode == SQL_RC_OK) {
+        printf("成功插入记录\n");
+    }
+    else {
+        printf("Error Code1: %d\n", sqlca.sqlcode);
+    }
+
+    // Commit the transaction
+    EXEC SQL COMMIT;
+
+    // Terminate the database connection
+    EXEC SQL DISCONNECT CURRENT;
+}
+
+void executeUpdate() {
+    // Include the SQLCA data structure variable
+    EXEC SQL INCLUDE SQLCA;
+    // Define the SQL host variables needed
+    EXEC SQL BEGIN DECLARE SECTION;
+        char     JobType[10];
+    EXEC SQL END DECLARE SECTION;
+
+    // Connect to the appropriate database
+    EXEC SQL CONNECT TO SAMPLE USER administrator USING sc;
+
+    // Prompt for job type
+    printf("请输入要修改的职位类型：");
+    scanf("%s", JobType);
+
+    // Define a dynamic UPDATE SQL statement
+    char SQLStmt[80] = "UPDATE EMPLOYEE2 SET JOB = ? WHERE JOB = 'MANAGER'";
+  
+    // Prepare the SQL statement
+    EXEC SQL PREPARE SQL_STMT FROM :SQLStmt;
+
+    // Execute the SQL statement
+    EXEC SQL EXECUTE SQL_STMT USING :JobType;
+
+    if (sqlca.sqlcode == SQL_RC_OK) {
+        printf("成功更新记录\n");
+    }
+    else {
+        printf("Error Code1: %d\n", sqlca.sqlcode);
+    }
+
+    // Commit the transaction
+    EXEC SQL COMMIT;
+
+    // Terminate the database connection
+    EXEC SQL DISCONNECT CURRENT;
+}
+
+void executeDelete() {
+    // Include the SQLCA data structure variable
+    EXEC SQL INCLUDE SQLCA;
+    // Define the SQL host variables needed
+    EXEC SQL BEGIN DECLARE SECTION;
+        char     EmployeeNo[7];
+    EXEC SQL END DECLARE SECTION;
+
+    // Connect to the appropriate database
+    EXEC SQL CONNECT TO SAMPLE USER administrator USING sc;
+
+    // Prompt for employee number
+    printf("请输入要删除的员工编号：");
+    scanf("%s", EmployeeNo);
+
+    // Define a dynamic DELETE SQL statement  
+    char SQLStmt[80] = "DELETE FROM EMPLOYEE2 WHERE EMPNO = ?";
+
+    // Prepare the SQL statement
+    EXEC SQL PREPARE SQL_STMT FROM :SQLStmt;
+
+    // Execute the SQL statement
+    EXEC SQL EXECUTE SQL_STMT USING :EmployeeNo;
+
+    if (sqlca.sqlcode == SQL_RC_OK) {
+        printf("成功删除记录\n");
+    }
+    else {
+        printf("Error Code1: %d\n", sqlca.sqlcode);
+    }
+
+    // Commit the transaction
+    EXEC SQL COMMIT;
+
+    // Terminate the database connection
+    EXEC SQL DISCONNECT CURRENT;
+}
+
+int main()
+{
+    SetConsoleOutputCP(65001);
+    while (1) {
+        printMenu();
+        int choice;
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                executeQuery();
+                break;
+            case 2:
+                executeInsert();
+                break;
+            case 3:
+                executeUpdate();
+                break;
+            case 4:
+                executeDelete();
+                break;
+            case 5:
+                printf("程序EXIT");
+                return 0;
+            default:
+                printf("Invalid Input!");
+                printf("\n");
+                break;
+        }
+    }
+
+    return 0;
+}

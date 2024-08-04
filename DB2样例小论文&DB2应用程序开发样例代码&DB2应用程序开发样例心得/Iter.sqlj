@@ -1,0 +1,310 @@
+import java.sql.*;
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.util.InputMismatchException;
+import java.util.Scanner;
+
+#sql context Ctx;
+#sql iterator NameIter(String EMPNO,  String LASTNAME);
+#sql iterator CountIter(int COUNT);
+
+class Iter {
+    private static final String DB_URL = "jdbc:db2://127.0.0.1:50230/sample";
+    private static final String USERNAME = "administrator";
+    private static final String PASSWORD = "sc";
+
+    public static void main(String[] argv) {
+        try {
+            Class.forName("com.ibm.db2.jcc.DB2Driver");
+            Ctx connCtx = new Ctx(DB_URL, USERNAME, PASSWORD, true);
+
+            displayMainMenu(connCtx);
+
+            connCtx.close();
+        } catch (ClassNotFoundException e) {
+            System.err.println("Could not load JDBC driver");
+            e.printStackTrace();
+        } catch (SQLException e) {
+            handleSQLException(e);
+        }
+    }
+
+    private static void displayMainMenu(Ctx connCtx) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        int choice = -1;
+
+        do {
+            System.out.println("\n\n\n\n\n=============================");
+            System.out.println("EMPLOYEE MANAGEMENT SYSTEM");
+            System.out.println("=============================");
+            System.out.println("Main Menu:");
+            System.out.println("1. Insert into EMPLOYEE");
+            System.out.println("2. Select from EMPLOYEE");
+            System.out.println("3. Update EMPLOYEE");
+            System.out.println("4. Delete from EMPLOYEE");
+            System.out.println("0. Exit");
+            System.out.print("Enter your choice: ");
+
+            if (scanner.hasNextInt()) {
+                choice = scanner.nextInt();
+                scanner.nextLine();
+            } else {
+                System.out.println("Invalid choice. Please enter a valid integer choice.");
+                scanner.nextLine();
+                continue;
+            }
+
+            switch (choice) {
+                case 1:
+                    insertEmployee(connCtx);
+                    break;
+                case 2:
+                    selectFromEmployee(connCtx);
+                    break;
+                case 3:
+                    updateEmployee(connCtx);
+                    break;
+                case 4:
+                    deleteFromEmployee(connCtx);
+                    break;
+                case 0:
+                    System.out.println("Exiting...");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        } while (choice != 0);
+    }
+
+    private static void insertEmployee(Ctx connCtx) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("\n\nInsert into EMPLOYEE");
+        System.out.print("Enter EMPNO: ");
+        String empNo = scanner.nextLine();
+
+        if (empNo.length() > 6) {
+            System.out.println("EMPNO must be within 6 characters. Insertion failed.");
+            return;
+        }
+
+        if (isEmployeeExists(connCtx, empNo)) {
+            System.out.println("Employee with ID " + empNo + " already exists. Insertion failed.");
+            return;
+        }
+
+        System.out.print("Enter FIRSTNME: ");
+        String firstName = scanner.nextLine();
+        if (firstName.length() > 12) {
+            System.out.println("FIRSTNME must be within 12 characters. Insertion failed.");
+            return;
+        }
+
+        System.out.print("Enter MIDINIT: ");
+        String midInit = scanner.nextLine();
+        if (midInit.length() != 1) {
+            System.out.println("MIDINIT must be a single character. Insertion failed.");
+            return;
+        }
+
+        System.out.print("Enter LASTNAME: ");
+        String lastName = scanner.nextLine();
+        if (lastName.length() > 15) {
+            System.out.println("LASTNAME must be within 15 characters. Insertion failed.");
+            return;
+        }
+
+        System.out.print("Enter EDLEVEL: ");
+        int edLevel = scanner.nextInt();
+        scanner.nextLine();
+
+
+        try {
+            #sql [connCtx] {
+                INSERT INTO EMPLOYEE (EMPNO, FIRSTNME, MIDINIT, LASTNAME, EDLEVEL)
+                VALUES (:empNo, :firstName, :midInit, :lastName, :edLevel )
+            };
+        }catch (SQLException e) {
+                 handleSQLException(e);
+                 return;
+             }
+        System.out.println("Employee inserted successfully.");
+    }
+
+    private static void selectFromEmployee(Ctx connCtx) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        int choice = -1;
+
+        do {
+            System.out.println("\n\n\n\n\n========================================");
+            System.out.println("SELECT from EMPLOYEE");
+            System.out.println("========================================");
+            System.out.println("1. Select all employees");
+            System.out.println("2. Select employee by ID");
+            System.out.println("0. Go back");
+            System.out.print("Enter your choice: ");
+
+            if (scanner.hasNextInt()) {
+                choice = scanner.nextInt();
+                scanner.nextLine();
+            } else {
+                System.out.println("Invalid choice. Please enter a valid integer choice.");
+                scanner.nextLine();
+                continue;
+            }
+
+            switch (choice) {
+                case 1:
+                    selectAllEmployees(connCtx);
+                    break;
+                case 2:
+                    System.out.print("Enter EMPNO: ");
+                    String empNo = scanner.nextLine();
+                    if (empNo.length() > 6) {
+                                System.out.println("EMPNO must be within 6 characters. Selection failed.");
+                                return;
+                            }
+                    selectEmployeeById(connCtx, empNo);
+                    break;
+                case 0:
+                    System.out.println("Going back to main menu...");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        } while (choice != 0);
+    }
+
+    private static void selectAllEmployees(Ctx connCtx) throws SQLException {
+        NameIter nIter;
+        try {
+            #sql [connCtx] nIter = {
+                SELECT EMPNO, LASTNAME FROM EMPLOYEE
+            };
+
+            while (nIter.next()) {
+                System.out.println(nIter.LASTNAME() + ", ID #" + nIter.EMPNO());
+                  }
+            nIter.close();
+        } catch (SQLException e) {
+                  handleSQLException(e);
+                  return;
+              }
+    }
+
+    private static void selectEmployeeById(Ctx connCtx, String empNo) throws SQLException {
+        try {
+             if (!isEmployeeExists(connCtx, empNo)) {
+                        System.out.println("Employee with ID " + empNo + " does not exist.");
+                        return;
+                    }
+            NameIter nIter;
+            #sql [connCtx] nIter = {
+                SELECT EMPNO, LASTNAME
+                FROM EMPLOYEE WHERE EMPNO = :empNo
+            };
+
+            while (nIter.next()) {
+                    System.out.println(nIter.LASTNAME() + ", ID #" + nIter.EMPNO());
+                              }
+            nIter.close();
+        }catch (SQLException e) {
+                 handleSQLException(e);
+                 return;
+             }
+    }
+
+    private static void updateEmployee(Ctx connCtx) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("\n\nUpdate EMPLOYEE");
+        System.out.print("Enter EMPNO: ");
+        String empNo = scanner.nextLine();
+
+        if (empNo.length() > 6) {
+                    System.out.println("EMPNO must be within 6 characters. Update failed.");
+                    return;
+                }
+
+        if (!isEmployeeExists(connCtx, empNo)) {
+            System.out.println("Employee with ID " + empNo + " does not exist. Update failed.");
+            return;
+        }
+
+        System.out.print("Enter new LASTNAME: ");
+        String newLastName = scanner.nextLine();
+        if (newLastName.length() > 15) {
+            System.out.println("LASTNAME must be within 15 characters. Update failed.");
+            return;
+        }
+
+        try {
+            #sql [connCtx] {
+                UPDATE EMPLOYEE
+                SET LASTNAME = :newLastName
+                WHERE EMPNO = :empNo
+            };
+        }catch (SQLException e) {
+                 handleSQLException(e);
+                 return;
+             }
+
+        System.out.println("Employee updated successfully.");
+    }
+
+    private static void deleteFromEmployee(Ctx connCtx) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("\n\nDelete from EMPLOYEE");
+        System.out.print("Enter EMPNO: ");
+        String empNo = scanner.nextLine();
+
+        if (empNo.length() > 6) {
+                    System.out.println("EMPNO must be within 6 characters. Deletion failed.");
+                    return;
+                }
+
+        if (!isEmployeeExists(connCtx, empNo)) {
+            System.out.println("Employee with ID " + empNo + " does not exist. Deletion failed.");
+            return;
+        }
+
+        try {
+            #sql [connCtx] {
+                DELETE FROM EMPLOYEE WHERE EMPNO = :empNo
+            };
+        }catch (SQLException e) {
+                 handleSQLException(e);
+                 return;
+             }
+
+        System.out.println("Employee deleted successfully.");
+    }
+
+    private static boolean isEmployeeExists(Ctx connCtx, String empNo) throws SQLException {
+        CountIter cIter;
+        try {
+            int count = 0;
+            #sql [connCtx] cIter =  {
+                        SELECT COUNT(*) AS COUNT FROM EMPLOYEE WHERE EMPNO = :empNo
+                    };
+
+            while (cIter.next()) {
+                    count = cIter.COUNT();
+                              }
+
+            return count > 0;
+        }catch (SQLException e) {
+                 handleSQLException(e);
+                 return false;
+             }
+    }
+
+    private static void handleSQLException(SQLException e) {
+        System.err.println("SQL Exception: " + e.getMessage());
+        System.err.println("SQL State: " + e.getSQLState());
+        System.err.println("Vendor Error Code: " + e.getErrorCode());
+        e.printStackTrace();
+    }
+
+}

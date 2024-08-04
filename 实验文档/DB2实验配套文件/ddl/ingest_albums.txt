@@ -1,0 +1,35 @@
+SQL2965I  对表 "SYSPROC.MON_GET_CONNECTION" 发出 SQL 语句 "SELECT"
+时产生了以下警告或错误。
+SQL0551N  由于授权标识不具有执行操作所必需的授权或特权，因此语句失败。授权标识：
+"INST23"。操作："EXECUTE"。对象："SYSPROC.MON_GET_CONNECTION"。  SQLSTATE=42501
+
+SQL2902I  插入实用程序已完成，时间戳记为 "2021-01-11
+03:22:56.826394"。错误数："1"。警告数："0"。
+SQL2965I  对表 "SYSPROC.MON_GET_CONNECTION" 发出 SQL 语句 "SELECT"
+时产生了以下警告或错误。
+SQL0551N  由于授权标识不具有执行操作所必需的授权或特权，因此语句失败。授权标识：
+"INST23"。操作："EXECUTE"。对象："SYSPROC.MON_GET_CONNECTION"。  SQLSTATE=42501
+
+SQL2902I  插入实用程序已完成，时间戳记为 "2021-01-11
+03:24:15.170547"。错误数："1"。警告数："0"。
+SQL2965I  对表 "SYSPROC.MON_GET_CONNECTION" 发出 SQL 语句 "SELECT"
+时产生了以下警告或错误。
+SQL0551N  由于授权标识不具有执行操作所必需的授权或特权，因此语句失败。授权标识：
+"INST23"。操作："EXECUTE"。对象："SYSPROC.MON_GET_CONNECTION"。  SQLSTATE=42501
+
+SQL2902I  插入实用程序已完成，时间戳记为 "2021-01-11
+03:24:56.853186"。错误数："1"。警告数："0"。
+SQL2965I  对表 "SYSPROC.MON_GET_CONNECTION" 发出 SQL 语句 "SELECT"
+时产生了以下警告或错误。
+SQL0551N  由于授权标识不具有执行操作所必需的授权或特权，因此语句失败。授权标识：
+"INST23"。操作："EXECUTE"。对象："SYSPROC.MON_GET_CONNECTION"。  SQLSTATE=42501
+
+SQL2902I  插入实用程序已完成，时间戳记为 "2021-01-11
+03:27:25.604351"。错误数："1"。警告数："0"。
+SQL2965I  对表 "SYSPROC.MON_GET_CONNECTION" 发出 SQL 语句 "SELECT"
+时产生了以下警告或错误。
+SQL0551N  由于授权标识不具有执行操作所必需的授权或特权，因此语句失败。授权标识：
+"INST23"。操作："EXECUTE"。对象："SYSPROC.MON_GET_CONNECTION"。  SQLSTATE=42501
+
+SQL2902I  插入实用程序已完成，时间戳记为 "2021-01-11
+03:27:43.283979"。错误数："1"。警告数："0"。

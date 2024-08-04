@@ -1,0 +1,1 @@
+call sysinstallobjects ('INGEST','C',NULL,NULL) ;

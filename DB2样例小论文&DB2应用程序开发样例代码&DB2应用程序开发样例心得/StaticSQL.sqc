@@ -1,0 +1,224 @@
+#include <stdio.h>
+#include <string.h>
+#include <sqlca.h>
+#include <sql.h>
+#include <sqlenv.h>
+#include <sqlda.h>
+
+void handleSqlcaError();
+
+// Function declarations for CRUD operations
+void insertEmployee();
+void selectEmployees();
+void updateEmployee();
+void deleteEmployee();
+
+// Define the SQLCA Data Structure Variable
+EXEC SQL INCLUDE SQLCA;
+
+// Define the host variables needed
+struct {
+    char     EmployeeNo[7];
+    char     LastName[16];
+    double   Salary;
+} hostvars;
+
+int main()
+{
+    int choice = -1;
+
+    while (choice != 0) {
+        // Display the main menu
+        printf("\n\n\n\n\n=============================\n");
+        printf("EMPLOYEE MANAGEMENT SYSTEM\n");
+        printf("=============================\n");
+        printf("Main Menu:\n");
+        printf("1. Insert into EMPLOYEE\n");
+        printf("2. Select from EMPLOYEE\n");
+        printf("3. Update EMPLOYEE\n");
+        printf("4. Delete from EMPLOYEE\n");
+        printf("0. Exit\n");
+        printf("Enter your choice: ");
+
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                insertEmployee();
+                break;
+            case 2:
+                selectEmployees();
+                break;
+            case 3:
+                updateEmployee();
+                break;
+            case 4:
+                deleteEmployee();
+                break;
+            case 0:
+                printf("Exiting...\n");
+                break;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    }
+
+    // Terminate the database connection
+    EXEC SQL DISCONNECT CURRENT;
+
+    // Return control to the operating system
+    return 0;
+}
+
+void handleSqlcaError() {
+    printf("SQL Error\n");
+}
+
+void insertEmployee() {
+    // Prompt the user for employee details
+    printf("Enter EMPNO: ");
+    scanf("%s", hostvars.EmployeeNo);
+
+    printf("Enter LASTNAME: ");
+    scanf("%s", hostvars.LastName);
+
+    printf("Enter SALARY: ");
+    scanf("%lf", &hostvars.Salary);
+
+    // Use EXEC SQL statements and host variables to perform the insert operation
+    EXEC SQL BEGIN DECLARE SECTION;
+        char     EmployeeNo[7];
+        char     LastName[16];
+        double   Salary;
+    EXEC SQL END DECLARE SECTION;
+
+    // Assign values from host variables to SQL host variables
+    strcpy(EmployeeNo, hostvars.EmployeeNo);
+    strcpy(LastName, hostvars.LastName);
+    Salary = hostvars.Salary;
+
+    // Connect to the appropriate database
+    EXEC SQL CONNECT TO SAMPLE USER administrator USING sc;
+    
+    EXEC SQL INSERT INTO EMPLOYEE1 (EMPNO, LASTNAME, SALARY) VALUES (:EmployeeNo, :LastName, :Salary);
+    if (sqlca.sqlcode == SQL_RC_OK) {
+        printf("Employee inserted successfully.\n");
+    } else {
+        printf("Failed to insert employee.\n");
+        handleSqlcaError();
+    }
+
+    // Commit The Transaction
+    EXEC SQL COMMIT;
+
+    // Disconnect from the database
+    EXEC SQL DISCONNECT CURRENT;
+}
+
+
+void selectEmployees() {
+    // Use EXEC SQL statements and host variables to perform the select operation
+    EXEC SQL BEGIN DECLARE SECTION;
+        char     EmployeeNo[7];
+        char     LastName[16];
+        double   Salary;
+    EXEC SQL END DECLARE SECTION;
+ 
+    // Connect to the appropriate database
+    EXEC SQL CONNECT TO SAMPLE USER administrator USING sc;
+    
+    EXEC SQL DECLARE C1 CURSOR FOR
+        SELECT EMPNO, LASTNAME, SALARY FROM EMPLOYEE1;
+
+    // Open the cursor
+    EXEC SQL OPEN C1;
+
+    // Fetch and display all records available
+    while (sqlca.sqlcode == SQL_RC_OK) {
+        EXEC SQL FETCH C1 INTO :EmployeeNo, :LastName, :Salary;
+
+        if (sqlca.sqlcode == SQL_RC_OK) {
+            printf("%-8s %-16s %lf\n", EmployeeNo, LastName, Salary);
+        }
+    }
+
+    // Close the cursor
+    EXEC SQL CLOSE C1;
+
+    // Commit The Transaction
+    EXEC SQL COMMIT;
+
+    // Disconnect from the database
+    EXEC SQL DISCONNECT CURRENT;
+}
+
+void updateEmployee() {
+    // Prompt the user for the employee number to update
+    printf("Enter EMPNO of the employee to update: ");
+    scanf("%s", hostvars.EmployeeNo);
+
+    // Use EXEC SQL statements and host variables to perform the update operation
+    EXEC SQL BEGIN DECLARE SECTION;
+        char     EmployeeNo[7];
+        char     LastName[16];
+        double   Salary;
+    EXEC SQL END DECLARE SECTION;
+ 
+    strcpy(EmployeeNo, hostvars.EmployeeNo);
+
+    printf("Enter LASTNAME: ");
+    scanf("%s", hostvars.LastName);
+
+    printf("Enter SALARY: ");
+    scanf("%lf", &hostvars.Salary);
+    
+    strcpy(LastName, hostvars.LastName);
+    Salary = hostvars.Salary;
+    
+    // Connect to the appropriate database
+    EXEC SQL CONNECT TO SAMPLE USER administrator USING sc;
+    
+    EXEC SQL UPDATE EMPLOYEE1 SET LASTNAME = :LastName, SALARY = :Salary WHERE EMPNO = :EmployeeNo;
+    if (sqlca.sqlcode == SQL_RC_OK) {
+        printf("Employee updated successfully.\n");
+    } else {
+        printf("Failed to update employee.\n");
+        handleSqlcaError();
+    }
+
+   // Commit The Transaction
+    EXEC SQL COMMIT;
+
+    // Disconnect from the database
+    EXEC SQL DISCONNECT CURRENT;
+}
+
+void deleteEmployee() {
+    // Prompt the user for the employee number to delete
+    printf("Enter EMPNO of the employee to delete: ");
+    scanf("%s", hostvars.EmployeeNo);
+
+    // Use EXEC SQL statements and host variables to perform the delete operation
+    EXEC SQL BEGIN DECLARE SECTION;
+        char     EmployeeNo[7];
+    EXEC SQL END DECLARE SECTION;
+
+    strcpy(EmployeeNo, hostvars.EmployeeNo);
+ 
+    // Connect to the appropriate database
+    EXEC SQL CONNECT TO SAMPLE USER administrator USING sc;
+    
+    EXEC SQL DELETE FROM EMPLOYEE1 WHERE EMPNO = :EmployeeNo;
+    if (sqlca.sqlcode == SQL_RC_OK) {
+        printf("Employee deleted successfully.\n");
+    } else {
+        printf("Failed to delete employee.\n");
+        handleSqlcaError();
+    }
+
+   // Commit The Transaction
+    EXEC SQL COMMIT;
+
+    // Disconnect from the database
+    EXEC SQL DISCONNECT CURRENT;
+}
